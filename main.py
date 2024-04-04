@@ -3,7 +3,7 @@ import imutils
 from ultralytics import YOLO
 import supervision as sv
 from greenonbrown import GreenOnBrown
-from actuator import *
+from xgantry import *
 from videocapture import *
 
 

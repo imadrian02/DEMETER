@@ -1,18 +1,4 @@
-import serial
-import time
-
-
-class Laser:
-    def __init__(self):
-        self.status = 0
-
-    def laser_on(self):
-        self.status = 1
-        print("[ACTION] Laser on")
-
-    def laser_off(self):
-        self.status = 0
-        print("[ACTION] Laser off")
+from laser import *
 
 
 class XGantry:
@@ -31,9 +17,8 @@ class XGantry:
         print(self.job)
 
     def moveTo(self, targetx):
-
         self.pos = targetx
-        print(f'[Action] Move to x: {self.pos}')
+        print(f'[Action] Moving to x: {self.pos}')
 
     def reset(self):
         self.status = 0
@@ -48,7 +33,7 @@ class XGantry:
         Laser.laser_on(self.laser)
 
         for cycle in range(cycles):
-            print(f"[Action] Laser blasting for {int(cycle+1)*duration} seconds")
+            print(f"[Action] Laser blasting for {int(cycle + 1) * duration} seconds")
             time.sleep(duration)
 
         Laser.laser_off(self.laser)
