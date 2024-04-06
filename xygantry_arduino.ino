@@ -5,10 +5,10 @@
 #define STEPS_PER_MM 5
 
 // Define the maximum speed and acceleration for your stepper motors
-#define MAX_SPEED_X 1000
-#define MAX_SPEED_Y 4000
+#define MAX_SPEED_X 1500
+#define MAX_SPEED_Y 2000
 #define ACCELERATION_X 1000
-#define ACCELERATION_Y 2000
+#define ACCELERATION_Y 1000
 
 // Define the pins connected to the stepper motor drivers on the CNC shield
 #define X_STEP_PIN 2
@@ -18,16 +18,14 @@
 #define Y2_STEP_PIN 4
 #define Y2_DIR_PIN 7
 
-// Define the pin connected to the servo motor
-#define Z_SERVO_PIN 11
+// Define the pin connected to the servo motor and limit switches
+#define Z_SERVO_PIN A3 // Changed servo pin to A3
+#define X_LIMIT_SWITCH_PIN 9
+#define Y_LIMIT_SWITCH_PIN 10
 
 // Define the coordinates for the home position
-#define HOME_X 0
-#define HOME_Y 0
-
-// Define the maximum travel distances for X and Y axes in mm
-#define MAX_TRAVEL_X_MM 1000
-#define MAX_TRAVEL_Y_MM 450
+float homeX = 0;
+float homeY = 0;
 
 // Create instances of AccelStepper for X and Y axes
 AccelStepper stepperX(AccelStepper::DRIVER, X_STEP_PIN, X_DIR_PIN);
@@ -51,6 +49,13 @@ void setup() {
 
   // Initialize serial communication
   Serial.begin(9600);
+
+  // Set the limit switch pins as inputs with pullup resistors
+  pinMode(X_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+  pinMode(Y_LIMIT_SWITCH_PIN, INPUT_PULLUP);
+
+  // Move to home position
+  moveGantryToHome();
 }
 
 void loop() {
@@ -58,25 +63,31 @@ void loop() {
   if (Serial.available() > 0) {
     // Read the input string until a newline character is received
     String input = Serial.readStringUntil('\n');
-    
-    // Parse the input string to extract X and Y coordinates
-     // Parse the input string to extract X, Y coordinates, and the third parameter
-    int commaIndex1 = input.indexOf(',');
-    int commaIndex2 = input.indexOf(',', commaIndex1 + 1);
-    if (commaIndex1 != -1 && commaIndex2 != -1) {
-      // Extract X, Y coordinates, and the third parameter
-      float xTarget = input.substring(0, commaIndex1).toFloat();
-      float yTarget = input.substring(commaIndex1 + 1, commaIndex2).toFloat();
-      int interval = input.substring(commaIndex2 + 1).toInt();
-      
-      // Move the X and Y gantry to the target coordinates
-      moveGantry(xTarget, yTarget);
-      // Toggle the servo for the Z-axis
-      if (interval != 0){
-        toggleServo(interval);
+
+    // Check if the input is "RESET" and execute moveGantryToHome() function
+    if (input == "RESET") {
+      moveGantryToHome();
+      Serial.println("Gantry moved to home position.");
+    }
+    else {
+      // Parse the input string to extract X, Y coordinates, and the third parameter
+      int commaIndex1 = input.indexOf(',');
+      int commaIndex2 = input.indexOf(',', commaIndex1 + 1);
+      if (commaIndex1 != -1 && commaIndex2 != -1) {
+        // Extract X, Y coordinates, and the third parameter
+        float xTarget = input.substring(0, commaIndex1).toFloat();
+        float yTarget = input.substring(commaIndex1 + 1, commaIndex2).toFloat();
+        int interval = input.substring(commaIndex2 + 1).toInt();
+
+        // Move the X and Y gantry to the target coordinates
+        moveGantry(xTarget, yTarget);
+        // Toggle the servo for the Z-axis
+        if (interval != 0){
+          toggleServo(interval);
+        }
+
+        Serial.println("OK");
       }
-      
-      Serial.println("OK");
     }
   }
 }
@@ -105,12 +116,6 @@ void moveGantry(float targetX, float targetY) {
     y2 = stepperY2.run();
     // You can add additional operations here if needed
   }
-  
-  // // Print the final positions of X and Y axes
-  // Serial.print("X Position: ");
-  // Serial.print(targetX);
-  // Serial.print(" | Y Position: ");
-  // Serial.println(targetY);
 }
 
 void toggleServo(int interval) {
@@ -133,3 +138,39 @@ void toggleServo(int interval) {
   delay(100); // Delay to allow the servo to stop
 }
 
+void moveGantryToHome() {
+  // Move X axis to home position
+  stepperX.setMaxSpeed(1000); // Slow speed for homing
+  stepperX.setAcceleration(1000); // Slow acceleration for homing
+  while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
+    stepperX.moveTo(-10000); // Move in negative direction until limit switch is hit
+    stepperX.run();
+    delay(1);
+  }
+  stepperX.setCurrentPosition(0); // Set current position as home position
+  stepperX.setMaxSpeed(MAX_SPEED_X); // Restore maximum speed
+  stepperX.setAcceleration(ACCELERATION_X); // Restore acceleration
+
+  // Move Y axes to home position
+  stepperY1.setMaxSpeed(1000); // Slow speed for homing
+  stepperY1.setAcceleration(1000); // Slow acceleration for homing
+  stepperY2.setMaxSpeed(1000); // Slow speed for homing
+  stepperY2.setAcceleration(1000); // Slow acceleration for homing
+  while (digitalRead(Y_LIMIT_SWITCH_PIN) == HIGH) {
+    stepperY1.moveTo(-10000); // Move in negative direction until limit switch is hit
+    stepperY2.moveTo(-10000); // Move in negative direction until limit switch is hit
+    stepperY1.run();
+    stepperY2.run();
+    delay(1);
+  }
+  stepperY1.setCurrentPosition(0); // Set current position as home position
+  stepperY2.setCurrentPosition(0); // Set current position as home position
+  stepperY1.setMaxSpeed(MAX_SPEED_Y); // Restore maximum speed
+  stepperY1.setAcceleration(ACCELERATION_Y); // Restore acceleration
+  stepperY2.setMaxSpeed(MAX_SPEED_Y); // Restore maximum speed
+  stepperY2.setAcceleration(ACCELERATION_Y); // Restore acceleration
+
+  // Set home position coordinates
+  homeX = 0;
+  homeY = 0;
+}
