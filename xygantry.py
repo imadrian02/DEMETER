@@ -3,12 +3,12 @@ import serial
 
 class XYGantry:
 
-    def __init__(self, port='COM5', baud_rate=9600):
+    def __init__(self, port='COM13', baud_rate=9600):
         self.available = True
         self.complete = 0
         self.job = {"Target": None, "X": None, "Y": None, "TreatTime": None}
-        self.frame_gantryx_ratio = 1.56250
-        self.frame_gantryy_ratio = 0.93750
+        self.frame_gantryx_ratio = 1.32353
+        self.frame_gantryy_ratio = 1.41667
         self.arduino = serial.Serial(port, baud_rate, timeout=1)
 
     def reset(self):
@@ -16,11 +16,9 @@ class XYGantry:
         self.job = {"Target": None, "X": None, "Y": None, "TreatTime": None}
 
     def hard_reset(self):
-        self.available = True
-        self.job = {"Target": None, "X": None, "Y": None, "TreatTime": None}
+        self.reset()
         msg = '0,0,0'
-        self.arduino.write(msg.encode())
-        print(f"[INFO] RESET gantry, sending: '{msg}' ..")
+        self.send_command(msg)
 
     def job_update(self, target, x, y, treat_time):
         self.available = False
@@ -28,9 +26,8 @@ class XYGantry:
         print(f"[INFO] Job received: {self.job}")
 
     def treat(self):
-        msg = f'{int(self.job["X"]*self.frame_gantryx_ratio)},{int(self.job["Y"]*self.frame_gantryy_ratio)},{self.job["TreatTime"]}'
-        self.arduino.write(msg.encode())
-        print(f"[INFO] Sending move command: '{msg}' ..")
+        msg = f'{int((680-self.job["X"]+25)*self.frame_gantryx_ratio)},{int((480-self.job["Y"]-60)*self.frame_gantryy_ratio)},{self.job["TreatTime"]}'
+        self.send_command(msg)
         print(f"[INFO] Treating target {self.job['Target']} ..")
 
     def job_complete(self):
@@ -42,3 +39,11 @@ class XYGantry:
             return True
         else:
             return False
+
+    def send_command(self,msg):
+        self.arduino.write(msg.encode())
+        print(f"[INFO] Sending move command: '{msg}' ..")
+        while not self.job_complete():
+            pass
+
+

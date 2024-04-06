@@ -10,7 +10,7 @@ class GreenOnBrown:
 
     def inference(self,
                   image,
-                  exgMin=30,
+                  exgMin=22,
                   exgMax=250,
                   hueMin=30,
                   hueMax=90,
