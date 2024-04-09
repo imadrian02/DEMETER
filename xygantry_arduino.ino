@@ -5,10 +5,10 @@
 #define STEPS_PER_MM 5
 
 // Define the maximum speed and acceleration for your stepper motors
-#define MAX_SPEED_X 2000
+#define MAX_SPEED_X 1500
 #define MAX_SPEED_Y 2000
-#define ACCELERATION_X 1000
-#define ACCELERATION_Y 1000
+#define ACCELERATION_X 2000
+#define ACCELERATION_Y 2000
 
 // Define the pins connected to the stepper motor drivers on the CNC shield
 #define X_STEP_PIN 2
@@ -24,7 +24,7 @@
 #define Y1_LIMIT_SWITCH_PIN 10
 #define Y2_LIMIT_SWITCH_PIN 11
 
-#define X_MAX 1000
+#define X_MAX 900
 #define Y_MAX 450
 
 
@@ -156,7 +156,7 @@ void moveGantryToHome() {
   stepperX.setMaxSpeed(1000); // Slow speed for homing
   stepperX.setAcceleration(2000); // Slow acceleration for homing
   while (digitalRead(X_LIMIT_SWITCH_PIN) == HIGH) {
-    stepperX.moveTo(-10000); // Move in negative direction until limit switch is hit
+    stepperX.moveTo(-5550); // Move in negative direction until limit switch is hit
     stepperX.run();
     delay(1);
   }
@@ -170,8 +170,8 @@ void moveGantryToHome() {
   stepperY2.setMaxSpeed(1000); // Slow speed for homing
   stepperY2.setAcceleration(2000); // Slow acceleration for homing
   while (digitalRead(Y1_LIMIT_SWITCH_PIN) == HIGH||digitalRead(Y2_LIMIT_SWITCH_PIN) == HIGH) {
-    stepperY1.moveTo(-10000); // Move in negative direction until limit switch is hit
-    stepperY2.moveTo(-10000); // Move in negative direction until limit switch is hit
+    stepperY1.moveTo(-2475); // Move in negative direction until limit switch is hit
+    stepperY2.moveTo(-2475); // Move in negative direction until limit switch is hit
     if (digitalRead(Y1_LIMIT_SWITCH_PIN) == HIGH){
       stepperY1.run();
     }
