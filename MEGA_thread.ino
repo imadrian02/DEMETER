@@ -44,6 +44,8 @@ int speedVal = 40;
 unsigned long lastButtonPressTime = 0;  // Variable to store the time of the last button press
 unsigned long debounceDelay = 50;       // Adjust this delay as needed
 
+bool e_stop = false;
+
 void setup() {
   Serial.begin(115200);
   Serial1.begin(115200);
@@ -63,6 +65,7 @@ void setup() {
   AutoScanSensor();
 
   error = ps2x.config_gamepad(13, 11, 10, 12, false, false);  //(clock, command, attention, data)
+
 
   if (error == 0) {
     Serial.println("Found Controller, configured successful");
@@ -126,8 +129,11 @@ void setup() {
       yAngle = fAngle[1] - init_y;
 
       if (abs(xAngle) > MAX_TILT || abs(xAngle) > MAX_TILT) {
+        e_stop = true;
         Serial.print("[WARNING] Tilting over MAX_TILT ");
         delay(100);
+      } else {
+        e_stop = false;
       }
 
       if (s_cDataUpdate & ANGLE_UPDATE) {
@@ -151,37 +157,42 @@ void setup() {
 
     unsigned long currentMillis = millis();
 
-    if (currentMillis - lastButtonPressTime >= debounceDelay) {
-      if (ps2x.Button(PSB_PAD_UP)) {
-        Serial.println("FORWARD");
-        digitalWrite(d1, 1);
-        digitalWrite(d2, 1);
-        analogWrite(s1, speedVal);
-        analogWrite(s2, speedVal);
-        lastButtonPressTime = currentMillis;
-      } else if (ps2x.Button(PSB_PAD_RIGHT)) {
-        Serial.println("RIGHT");
-        digitalWrite(d1, 1);
-        digitalWrite(d2, 1);
-        analogWrite(s1, speedVal);
-        analogWrite(s2, 20);
-        lastButtonPressTime = currentMillis;
-      } else if (ps2x.Button(PSB_PAD_LEFT)) {
-        Serial.println("LEFT");
-        digitalWrite(d1, 1);
-        digitalWrite(d2, 1);
-        analogWrite(s1, 20);
-        analogWrite(s2, speedVal);
-        lastButtonPressTime = currentMillis;
-      } else if (ps2x.Button(PSB_PAD_DOWN)) {
-        Serial.println("BACK");
-        digitalWrite(d1, 0);
-        digitalWrite(d2, 0);
-        analogWrite(s1, speedVal);
-        analogWrite(s2, speedVal);
-        lastButtonPressTime = currentMillis;
+    if (!e_stop) {
+
+      vibrate = 0;
+      if (currentMillis - lastButtonPressTime >= debounceDelay) {
+        if (ps2x.Button(PSB_PAD_UP)) {
+          Serial.println("FORWARD");
+          digitalWrite(d1, 1);
+          digitalWrite(d2, 1);
+          analogWrite(s1, speedVal);
+          analogWrite(s2, speedVal);
+          lastButtonPressTime = currentMillis;
+        } else if (ps2x.Button(PSB_PAD_RIGHT)) {
+          Serial.println("RIGHT");
+          digitalWrite(d1, 1);
+          digitalWrite(d2, 1);
+          analogWrite(s1, speedVal);
+          analogWrite(s2, 20);
+          lastButtonPressTime = currentMillis;
+        } else if (ps2x.Button(PSB_PAD_LEFT)) {
+          Serial.println("LEFT");
+          digitalWrite(d1, 1);
+          digitalWrite(d2, 1);
+          analogWrite(s1, 20);
+          analogWrite(s2, speedVal);
+          lastButtonPressTime = currentMillis;
+        } else if (ps2x.Button(PSB_PAD_DOWN)) {
+          Serial.println("BACK");
+          digitalWrite(d1, 0);
+          digitalWrite(d2, 0);
+          analogWrite(s1, speedVal);
+          analogWrite(s2, speedVal);
+          lastButtonPressTime = currentMillis;
+        }
       }
     }
+
 
     delay(50);
   });
