@@ -33,6 +33,8 @@ float yAngle = 0;
 #define d1 8  // Motor 1 direction
 #define d2 7  // Motor 2 direction
 
+#define E_STOP 2
+
 PS2X ps2x;
 
 int error = 0;
@@ -57,6 +59,10 @@ void setup() {
   analogWrite(s2, 0);
   digitalWrite(d1, 0);
   digitalWrite(d2, 0);
+
+  pinMode(E_STOP, OUTPUT);
+  digitalWrite(E_STOP, HIGH);
+
 
   WitInit(WIT_PROTOCOL_NORMAL, 0x50);
   WitSerialWriteRegister(SensorUartSend);
@@ -131,9 +137,11 @@ void setup() {
       if (abs(xAngle) > MAX_TILT || abs(xAngle) > MAX_TILT) {
         e_stop = true;
         Serial.print("[WARNING] Tilting over MAX_TILT ");
+        digitalWrite(E_STOP, LOW);
         delay(100);
       } else {
         e_stop = false;
+        digitalWrite(E_STOP, HIGH);
       }
 
       if (s_cDataUpdate & ANGLE_UPDATE) {
