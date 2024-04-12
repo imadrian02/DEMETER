@@ -2,6 +2,7 @@ import time
 import numpy as np
 import threading
 import cv2
+import serial
 from ultralytics import YOLO
 from supervision import ByteTrack, BoundingBoxAnnotator,LabelAnnotator, Detections
 from greenonbrown import GreenOnBrown
@@ -10,7 +11,7 @@ from videocapture import *
 
 start_time = time.time()
 
-model = YOLO(r'C:\Users\adria\DEMETER\model\best.pt')
+model = YOLO(r'/home/pi/DEMETER/model/best.pt')
 detector = GreenOnBrown(algorithm='exg')
 tracker = ByteTrack()
 
@@ -19,6 +20,15 @@ label_annotator = LabelAnnotator()
 
 cap = VideoCapture(0)
 xygantry = XYGantry()
+
+ser = serial.Serial(r'/dev/ttyACM0', 115200)
+
+def e_stop():
+    while True:
+        response = ser.readline().decode().strip()
+        if response == "ESTOP":
+            print("[WARNING] Auto stop activated, plug and unplug mcu")
+        
 
 def get_centroid(x1, y1, x2, y2):
     cx = (x1 + x2) / 2
@@ -31,9 +41,14 @@ def display_frame():
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
             break
+        
+estop_thread = threading.Thread(target=e_stop)
+display_thread = threading.Thread(target=display_frame)
+estop_thread.start()
 
 try:
     while True:
+        
         frame = cap.read()
         frame = frame[0:480, 0:640]
 
@@ -62,14 +77,13 @@ try:
         weed_frame = box_annotator.annotate(frame.copy(), detections=detections)
         weed_frame = label_annotator.annotate(weed_frame, detections=detections, labels=labels)
 
-        display_flag = True
         display_thread = threading.Thread(target=display_frame)
         display_thread.start()
 
         for tracker_id, xyxy in zip(detections.tracker_id, detections.xyxy):
             x1, y1, x2, y2 = xyxy.tolist()
             x, y = get_centroid(x1, y1, x2, y2)
-            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=2)
+            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=2)	
             xygantry.treat()
             print()
             history.append(tracker_id)
