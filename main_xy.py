@@ -4,7 +4,7 @@ import threading
 import cv2
 import serial
 from ultralytics import YOLO
-from supervision import ByteTrack, BoundingBoxAnnotator,LabelAnnotator, Detections
+from supervision import ByteTrack, BoundingBoxAnnotator, LabelAnnotator, Detections
 from greenonbrown import GreenOnBrown
 from xygantry import *
 from videocapture import *
@@ -23,6 +23,9 @@ xygantry = XYGantry()
 
 ser = serial.Serial(r'/dev/ttyACM0', 115200)
 
+# Declare weed_frame as global variable
+global weed_frame
+
 def e_stop():
     while True:
         response = ser.readline().decode().strip()
@@ -37,6 +40,7 @@ def get_centroid(x1, y1, x2, y2):
 
 def display_frame():
     while True:
+        # Access the global variable weed_frame
         cv2.imshow("Output", weed_frame)
         key = cv2.waitKey(1) & 0xFF
         if key == ord('q'):
@@ -74,6 +78,7 @@ try:
 
         labels = [f"#{tracker_id}" for class_id, tracker_id in zip(detections.class_id, detections.tracker_id)]
 
+        # Assign the result to the global variable
         weed_frame = box_annotator.annotate(frame.copy(), detections=detections)
         weed_frame = label_annotator.annotate(weed_frame, detections=detections, labels=labels)
 
@@ -83,7 +88,7 @@ try:
         for tracker_id, xyxy in zip(detections.tracker_id, detections.xyxy):
             x1, y1, x2, y2 = xyxy.tolist()
             x, y = get_centroid(x1, y1, x2, y2)
-            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=2)	
+            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=2)    
             xygantry.treat()
             print()
             history.append(tracker_id)
