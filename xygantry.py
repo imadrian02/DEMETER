@@ -3,13 +3,13 @@ import serial
 
 class XYGantry:
 
-    def __init__(self, port='/dev/ttyUSB0', baud_rate=115200):
+    def __init__(self, port='COM13', baud_rate=9600):
         self.available = True
         self.complete = 0
         self.job = {"Target": None, "X": None, "Y": None, "TreatTime": None}
         self.frame_gantryx_ratio = 1.32353
         self.frame_gantryy_ratio = 1.41667
-        self.arduino = serial.Serial(port, baud_rate)
+        self.arduino = serial.Serial(port, baud_rate, timeout=1)
 
     def reset(self):
         self.available = True
@@ -26,14 +26,9 @@ class XYGantry:
         print(f"[INFO] Job received: {self.job}")
 
     def treat(self):
-        x = int((680-self.job["X"]+25)*self.frame_gantryx_ratio)
-        y = int((480-self.job["Y"]-60)*self.frame_gantryy_ratio)
-        msg = f'{x},{y},{self.job["TreatTime"]}'
-        if x < 900 and y < 400:
-            self.send_command(msg)
-            print(f"[INFO] Treating target {self.job['Target']} ..")
-        else:
-            self.job_complete()
+        msg = f'{int((680-self.job["X"]+25)*self.frame_gantryx_ratio)},{int((480-self.job["Y"]-60)*self.frame_gantryy_ratio)},{self.job["TreatTime"]}'
+        self.send_command(msg)
+        print(f"[INFO] Treating target {self.job['Target']} ..")
 
     def job_complete(self):
         response = self.arduino.readline().decode().strip()
