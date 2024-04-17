@@ -36,29 +36,36 @@ pause = False
 weed_frame = None
 
 
-def e_stop():
+def process_command():
     global pause
+    global auto
     while True:
         try:
             res = ser.readline().decode().strip()
             if res == "ESTOP":
                 print("[WARNING] Auto stop activated, plug and unplug mcu")
 
+            if res == "AUTO":
+                auto = True
+                print("[INFO] Auto mode activated")
+
+            if res == "MANUAL":
+                auto = False
+                print("[INFO] Manual mode activated")
+
             if auto:
                 if res == "OK":
                     pause = False
+            else:
+                if res == "OK_MANUAL":
+                    pause = False
+
 
         except serial.SerialException as e:
             print("[ERROR] ", e)
 
         except Exception as e:
             print("[ERROR] An unexpected error occurred:", e)
-
-
-def get_centroid(x1, y1, x2, y2):
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    return cx, cy
 
 
 def display_frame():
@@ -74,7 +81,13 @@ def display_frame():
             time.sleep(0.1)
 
 
-estop_thread = threading.Thread(target=e_stop)
+def get_centroid(x1, y1, x2, y2):
+    cx = (x1 + x2) / 2
+    cy = (y1 + y2) / 2
+    return cx, cy
+
+
+estop_thread = threading.Thread(target=process_command)
 estop_thread.start()
 
 display_thread = threading.Thread(target=display_frame)
@@ -120,7 +133,7 @@ try:
         for tracker_id, xyxy in zip(detections.tracker_id, detections.xyxy):
             x1, y1, x2, y2 = xyxy.tolist()
             x, y = get_centroid(x1, y1, x2, y2)
-            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=2)
+            xygantry.job_update(target=tracker_id, x=x, y=y, treat_time=5)
             xygantry.treat()
             print()
             history.append(tracker_id)
