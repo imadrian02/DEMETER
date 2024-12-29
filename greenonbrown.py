@@ -3,6 +3,8 @@ from imutils import grab_contours
 import numpy as np
 import cv2
 
+global output
+global thresholdOut
 
 class GreenOnBrown:
     def __init__(self, algorithm='exg', label_file='models/labels.txt'):
@@ -19,7 +21,7 @@ class GreenOnBrown:
                   saturationMin=30,
                   saturationMax=255,
                   minArea=10,
-                  show_display=False,
+                  show_display=True,
                   algorithm='exg',
                   invert_hue=False):
         '''
@@ -85,6 +87,7 @@ class GreenOnBrown:
             output = np.uint8(np.abs(output))
             if show_display:
                 cv2.imshow("HSV Threshold on ExG", output)
+                
 
             thresholdOut = cv2.adaptiveThreshold(output, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 31,
                                                  2)

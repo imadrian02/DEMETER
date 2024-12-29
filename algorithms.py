@@ -29,7 +29,7 @@ def exg(image):
     imgOut = np.clip(imgOut, 0, 255)
     imgOut = imgOut.astype('uint8')
 
-    # cv2.imshow('ExG', imgOut)
+    cv2.imshow('ExG', imgOut)
     return imgOut
 
 
